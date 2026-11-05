@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EKGA · Engineering Knowledge Assistant</title>
+<style>
+:root{--bg:#f5f6f8;--panel:#fff;--ink:#16202c;--mute:#6a7686;--line:#e2e6ec;--brand:#0b5cff;--brand-ink:#fff;--ok:#12805c;--warn:#b25e00;--chip:#eef3ff;--user:#0b5cff}
+@media (prefers-color-scheme:dark){:root{--bg:#10151c;--panel:#18202a;--ink:#e8edf3;--mute:#93a0b0;--line:#2a3441;--brand:#5b8cff;--brand-ink:#0b1220;--ok:#42c79a;--warn:#f0a43c;--chip:#1e2a40;--user:#2c5bd6}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:14px;padding:10px 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+.logo{font-weight:700;letter-spacing:.3px}.logo span{color:var(--brand)}
+.spacer{flex:1}
+select,input,button{font:inherit;color:inherit}
+select,input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+label.t{font-size:12px;color:var(--mute);display:flex;align-items:center;gap:8px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(380px,1fr) minmax(320px,1fr)}
+@media(max-width:900px){main{grid-template-columns:1fr}#viewer{display:none}#viewer.show{display:flex;position:fixed;inset:0;z-index:5}}
+#chat{display:flex;flex-direction:column;min-height:0;border-right:1px solid var(--line)}
+#thread{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+.banner{margin:12px 18px 0;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn);font-size:13px;display:none}
+.empty{margin:auto;max-width:480px;text-align:center;color:var(--mute)}
+.empty h2{color:var(--ink);margin:0 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--ink);padding:6px 11px;border-radius:999px;cursor:pointer;font-size:13px}
+.chip:hover{border-color:var(--brand)}
+.msg{max-width:92%}
+.msg.user{align-self:flex-end;background:var(--user);color:#fff;padding:9px 13px;border-radius:14px 14px 3px 14px}
+.msg.bot{align-self:flex-start;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:14px 14px 14px 3px;padding:12px 14px}
+.msg.bot.refused{border-left:4px solid var(--warn)}
+.meta{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--mute);margin-bottom:6px;flex-wrap:wrap}
+.tag{padding:1px 8px;border-radius:999px;border:1px solid var(--line);font-size:11px}
+.tag.ok{color:var(--ok);border-color:var(--ok)}.tag.warn{color:var(--warn);border-color:var(--warn)}
+.ans p{margin:4px 0}.ans ul{margin:4px 0;padding-left:20px}.ans li{margin:5px 0}
+.cite{display:inline-block;margin:0 2px;padding:0 7px;border-radius:6px;background:var(--chip);color:var(--brand);font-size:12px;cursor:pointer;border:1px solid transparent;white-space:nowrap}
+.cite:hover{border-color:var(--brand)}
+.cursor::after{content:"▍";animation:b 1s steps(1) infinite;color:var(--brand)}@keyframes b{50%{opacity:0}}
+details{margin-top:8px;font-size:13px}summary{cursor:pointer;color:var(--mute)}
+.step{display:grid;grid-template-columns:150px 60px 1fr;gap:8px;padding:3px 0;border-bottom:1px dashed var(--line);font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.step b{color:var(--brand)}.step i{color:var(--mute);font-style:normal}
+.fb{display:flex;gap:6px;align-items:center;margin-top:8px}
+.fb button{background:none;border:1px solid var(--line);border-radius:8px;padding:2px 9px;cursor:pointer}
+.fb button:hover{border-color:var(--brand)}.fb input{flex:1;padding:4px 8px;font-size:13px}
+form{display:flex;gap:8px;padding:12px 18px;border-top:1px solid var(--line);background:var(--panel)}
+form input{flex:1;padding:10px 12px}
+form button{background:var(--brand);color:var(--brand-ink);border:0;border-radius:8px;padding:0 18px;font-weight:600;cursor:pointer}
+form button:disabled{opacity:.5;cursor:wait}
+#viewer{display:flex;flex-direction:column;min-height:0;background:var(--panel)}
+.vbar{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);overflow:auto}
+.vbar .tab{padding:4px 10px;border-radius:8px;border:1px solid var(--line);cursor:pointer;white-space:nowrap;font-size:13px}
+.vbar .tab.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+#pdf{flex:1;border:0;width:100%;background:var(--bg)}
+.vempty{margin:auto;color:var(--mute);text-align:center;padding:20px}
+#close{display:none;margin-left:auto;background:none;border:0;font-size:20px;cursor:pointer}
+@media(max-width:900px){#close{display:block}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">EKGA<span>·</span> Service Assistant</div>
+  <div class="spacer"></div>
+  <label class="t">Account
+    <select id="tenant">
+      <option value="key-admin">ADMIN (all machines)</option>
+      <option value="key-t1">Customer T1</option><option value="key-t2">Customer T2</option>
+      <option value="key-t3">Customer T3</option><option value="key-t4">Customer T4</option>
+      <option value="key-t5">Customer T5</option>
+    </select>
+  </label>
+  <button class="chip" id="reset" type="button">New session</button>
+</header>
+<main>
+  <section id="chat">
+    <div class="banner" id="banner"></div>
+    <div id="thread"></div>
+    <form id="form" autocomplete="off">
+      <input type="text" id="q" placeholder="Ask about torque specs, ECNs, supersessions, machines…" required>
+      <button id="send">Ask</button>
+    </form>
+  </section>
+  <aside id="viewer">
+    <div class="vbar" id="vbar"><button id="close" type="button" aria-label="Close">✕</button></div>
+    <div class="vempty" id="vempty">Select a citation to open the source page here.</div>
+    <iframe id="pdf" title="Source document" hidden></iframe>
+  </aside>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const thread = $('#thread'), form = $('#form'), qin = $('#q'), send = $('#send');
+const SAMPLES = [
+  "What is the torque spec for the gearbox on Model X200 Rev 3?",
+  "What is the torque spec for the main bearing on Model X200?",
+  "Which documents are affected by ECN-2224?",
+  "Which machines shipped between 2015 and 2018 use pump P-2201, and what superseded it?",
+  "Which standards does Model X300 comply with?",
+  "What is the capital of France?"
+];
+let sid = crypto.randomUUID(), tabs = [];
+
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function empty(){
+  thread.innerHTML = `<div class="empty"><h2>Ask the manuals</h2>
+  Answers are built from your documents, cite their sources, and say “Cannot verify” when evidence is missing.
+  <div class="chips">${SAMPLES.map(s=>`<span class="chip">${esc(s)}</span>`).join('')}</div></div>`;
+  thread.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{qin.value=c.textContent;form.requestSubmit()});
+}
+function render(text){            // bullets + [DOC §n p.N] -> clickable citation chips
+  let html = '', inList = false;
+  for (const l of text.split('\n')){
+    const bullet = l.startsWith('- ');
+    const body = esc(bullet ? l.slice(2) : l).replace(/\[([A-Z]{3}-[A-Z0-9-]+|REGISTRY)(?: §(\d+) p\.(\d+))?\]/g, (m,doc,sec,pg)=>
+      doc==='REGISTRY' ? `<span class="cite" title="Installed-base registry">registry</span>`
+      : `<span class="cite" data-doc="${doc}" data-page="${pg||1}">${doc}${pg?` · p.${pg}`:''}</span>`);
+    if (bullet && !inList){html+='<ul>';inList=true}
+    if (!bullet && inList){html+='</ul>';inList=false}
+    html += bullet ? `<li>${body}</li>` : (body.trim()?`<p>${body}</p>`:'');
+  }
+  return html + (inList?'</ul>':'');
+}
+function openDoc(doc, page){
+  const key = $('#tenant').value;
+  let t = tabs.find(x=>x.doc===doc); if(!t){t={doc};tabs.push(t)} t.page = page;
+  const bar = $('#vbar'); bar.querySelectorAll('.tab').forEach(x=>x.remove());
+  tabs.forEach(x=>{const b=document.createElement('span');b.className='tab'+(x.doc===doc?' on':'');b.textContent=x.doc;
+    b.onclick=()=>openDoc(x.doc,x.page);bar.insertBefore(b,$('#close'))});
+  $('#vempty').hidden = true; const f = $('#pdf'); f.hidden = false;
+  f.src = `/doc/${doc}?key=${key}#page=${page}`; $('#viewer').classList.add('show');
+}
+$('#close').onclick = ()=>$('#viewer').classList.remove('show');
+thread.addEventListener('click', e=>{const c=e.target.closest('.cite[data-doc]'); if(c) openDoc(c.dataset.doc, c.dataset.page)});
+
+function planHtml(p){
+  if(!p) return '';
+  return `<details><summary>Agent plan · ${esc(p.route)} · ${p.trace.length} steps</summary>` +
+    p.trace.map(s=>{const {step,ms,...rest}=s;return `<div class="step"><b>${esc(step)}</b><i>${ms} ms</i><span>${esc(JSON.stringify(rest))}</span></div>`}).join('') + `</details>`;
+}
+async function ask(question){
+  if (thread.querySelector('.empty')) thread.innerHTML = '';
+  thread.insertAdjacentHTML('beforeend', `<div class="msg user">${esc(question)}</div>`);
+  const bot = document.createElement('div'); bot.className = 'msg bot';
+  bot.innerHTML = `<div class="meta"><span class="tag">thinking…</span></div><div class="ans cursor"></div>`;
+  thread.appendChild(bot); thread.scrollTop = thread.scrollHeight; send.disabled = true;
+  let text = '', plan = null, cites = [], done = null;
+  try{
+    const res = await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':$('#tenant').value},
+      body:JSON.stringify({question,session_id:sid})});
+    if(!res.ok) throw new Error(res.status===401?'invalid API key':'request failed ('+res.status+')');
+    const rd = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+    for(;;){
+      const {value,done:d} = await rd.read(); if(d) break; buf += dec.decode(value,{stream:true});
+      const parts = buf.split('\n\n'); buf = parts.pop();
+      for (const p of parts){
+        const ev = p.match(/event: (.*)/)[1], data = JSON.parse(p.match(/data: (.*)/s)[1]);
+        if (ev==='warning'){$('#banner').textContent=data;$('#banner').style.display='block'}
+        if (ev==='plan') plan = data;
+        if (ev==='token'){text += data; bot.querySelector('.ans').innerHTML = render(text)}
+        if (ev==='citations') cites = data;
+        if (ev==='done') done = data;
+        thread.scrollTop = thread.scrollHeight;
+      }
+    }
+  }catch(err){ text = 'Cannot reach the assistant: ' + err.message; done = {refused:true}; }
+  const refused = done && done.refused;
+  bot.classList.toggle('refused', !!refused);
+  const ans = bot.querySelector('.ans'); ans.classList.remove('cursor'); ans.innerHTML = render(text);
+  const docs = [...new Set(cites.filter(c=>c.doc!=='REGISTRY').map(c=>c.doc))];
+  bot.querySelector('.meta').innerHTML =
+    `<span class="tag ${refused?'warn':'ok'}">${refused?'cannot verify':'verified'}</span>` +
+    (plan?`<span class="tag">${esc(plan.route)}</span>`:'') + (done&&done.latency_ms?`<span>${done.latency_ms} ms</span>`:'') +
+    (done&&done.removed_claims?`<span class="tag warn">${done.removed_claims} unsupported claim(s) removed</span>`:'') +
+    (docs.length?`<span>${docs.length} source${docs.length>1?'s':''}</span>`:'');
+  bot.insertAdjacentHTML('beforeend', planHtml(plan) +
+    `<div class="fb"><button data-r="1" title="Helpful">👍</button><button data-r="-1" title="Not helpful">👎</button><input type="text" placeholder="Reason (optional)"></div>`);
+  bot.querySelector('.fb').onclick = async e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    await fetch('/feedback',{method:'POST',headers:{'Content-Type':'application/json','X-API-Key':$('#tenant').value},
+      body:JSON.stringify({question,answer:text,rating:+b.dataset.r,reason:bot.querySelector('.fb input').value})});
+    bot.querySelector('.fb').innerHTML = '<span class="meta">Thanks, feedback saved.</span>';
+  };
+  if (docs.length && !refused) openDoc(docs[0], (cites.find(c=>c.doc===docs[0])||{}).page||1);
+  send.disabled = false; thread.scrollTop = thread.scrollHeight; qin.focus();
+}
+form.onsubmit = e=>{e.preventDefault(); const q=qin.value.trim(); if(!q) return; qin.value=''; ask(q)};
+$('#reset').onclick = ()=>{sid=crypto.randomUUID();tabs=[];$('#pdf').hidden=true;$('#vempty').hidden=false;
+  $('#vbar').querySelectorAll('.tab').forEach(t=>t.remove());$('#banner').style.display='none';empty()};
+$('#tenant').onchange = $('#reset').onclick;
+empty();
+</script>
+</body>
+</html>

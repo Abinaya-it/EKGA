@@ -1,0 +1,41 @@
+# Minimal K8s deployment. Create a read-only Neo4j user (reader) and put creds in the secret. Backup/restore drill: see docs/runbook.md
+apiVersion: v1
+kind: Secret
+metadata: { name: ekga-secrets }
+stringData: { NEO4J_PASSWORD: change-me, NEO4J_RO_PASSWORD: change-me-ro }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: ekga-agent, labels: { app: ekga } }
+spec:
+  replicas: 3
+  selector: { matchLabels: { app: ekga } }
+  template:
+    metadata: { labels: { app: ekga } }
+    spec:
+      containers:
+        - name: api
+          image: registry.internal/ekga:latest       # <- your registry
+          ports: [{ containerPort: 8000 }]
+          env:
+            - { name: GRAPH_BACKEND, value: neo4j }
+            - { name: NEO4J_URI, value: "bolt://neo4j:7687" }
+            - { name: NEO4J_RO_USER, value: reader }
+            - { name: LLM_URL, value: "http://llm:8000/v1" }
+          envFrom: [{ secretRef: { name: ekga-secrets } }]
+          readinessProbe: { httpGet: { path: /health, port: 8000 }, periodSeconds: 10 }
+          resources: { requests: { cpu: 500m, memory: 1Gi }, limits: { cpu: "2", memory: 4Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: ekga-agent }
+spec: { selector: { app: ekga }, ports: [{ port: 80, targetPort: 8000 }] }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata: { name: ekga-agent }
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: ekga-agent }
+  minReplicas: 3
+  maxReplicas: 10
+  metrics: [{ type: Resource, resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } } }]

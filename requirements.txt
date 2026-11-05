@@ -1,0 +1,19 @@
+pymupdf
+reportlab
+python-docx
+networkx
+numpy
+scikit-learn
+rapidfuzz
+requests
+fastapi
+uvicorn
+pytest
+httpx
+neo4j            # only needed when GRAPH_BACKEND=neo4j
+# --- optional, for model-based mode / fine-tuning (install from internal mirror or wheels/) ---
+# sentence-transformers
+# torch
+# peft
+# trl
+# datasets

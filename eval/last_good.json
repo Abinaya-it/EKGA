@@ -1,0 +1,13 @@
+{
+ "n": 100,
+ "correctness_all": 100.0,
+ "correctness_answerable": 100.0,
+ "single_hop": 100.0,
+ "multi_hop": 100.0,
+ "refusal_correctness": 100.0,
+ "false_refusal_rate": 0.0,
+ "citation_precision": 100.0,
+ "claims_removed_by_verifier_pct": 0.0,
+ "latency_p50_ms": 5.4,
+ "latency_p95_ms": 14.9
+}

@@ -1,0 +1,24 @@
+# docker compose -f deploy/docker-compose.yml up --build      (images must come from your internal registry/mirror)
+services:
+  neo4j:
+    image: neo4j:5-community
+    environment: { NEO4J_AUTH: neo4j/ekga-password }
+    ports: ["7474:7474", "7687:7687"]
+    volumes: [neo4j_data:/data]
+  ollama:                                    # local LLM server; load models from files: `ollama create` from a GGUF (no internet needed)
+    image: ollama/ollama
+    ports: ["11434:11434"]
+    volumes: [./models:/models, ollama:/root/.ollama]
+  app:
+    build: { context: .., dockerfile: Dockerfile }
+    environment:
+      GRAPH_BACKEND: neo4j
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_PASSWORD: ekga-password
+      LLM_URL: http://ollama:11434/v1
+      LLM_MODEL: qwen2.5:7b-instruct
+      # EMB_PATH: /models/bge-base-en-v1.5
+    depends_on: [neo4j, ollama]
+    ports: ["8000:8000"]
+    volumes: [../models:/models]
+volumes: { neo4j_data: {}, ollama: {} }
